@@ -2,9 +2,7 @@ from abc import ABC
 
 from botocore.client import BaseClient
 
-from app.services.ec2_instance_state_manager.helper.commands.interface import (
-    Ec2InstanceStateManagerHelperCommandABC,
-)
+from app.services.ec2_instance_state_manager.helper.commands.interface import Ec2InstanceStateManagerHelperCommandABC
 
 
 class Ec2InstanceStateManagerHelperABC(ABC):

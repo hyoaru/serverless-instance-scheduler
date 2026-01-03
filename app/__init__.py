@@ -1,9 +1,22 @@
+import json
+import os
+from typing import Literal, cast
+
 import boto3
+from dotenv import load_dotenv
 
 from app.services.ec2_instance_state_manager import Ec2InstanceStateManager
 from app.utilities.logger import Logger
 
-ec2 = boto3.client("ec2")
+load_dotenv()
+
+ec2 = boto3.client(
+    "ec2",
+    endpoint_url=os.getenv("AWS_ENDPOINT_URL"),
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    region_name=os.getenv("AWS_REGION_NAME"),
+)
 
 
 def handler(event, context):
@@ -11,11 +24,11 @@ def handler(event, context):
     logger = Logger.get_instance()
 
     logger.info("Initializing parameters")
-    fn = context.function_name
-    environment = fn[0 : fn.find("-")]
-    action = "STOP"
+    fn = context["function_name"]
+    environment = cast(Literal["dev", "stage", "prod"], fn[0 : fn.find("-")])
+    action = event["action"]
 
     logger.info(f"Executing {action} for environment: {environment}")
     Ec2InstanceStateManager(ec2, environment).execute(action)
 
-    return {"status": 200}
+    return json.dumps({"status": 200, "message": f"Successfully executed {action}"})

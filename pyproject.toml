@@ -7,4 +7,17 @@ requires-python = ">=3.12"
 dependencies = [
     "boto3>=1.42.19",
     "pydantic>=2.12.5",
+    "python-dotenv>=1.2.1",
 ]
+
+[tool.setuptools]
+packages = ["app"]
+
+[tool.uv]
+package = true
+
+[tool.ruff]
+line-length = 120
+
+[project.scripts]
+lambda = "app:handler"

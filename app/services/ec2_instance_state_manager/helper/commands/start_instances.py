@@ -1,8 +1,6 @@
 from typing import List
 
-from app.services.ec2_instance_state_manager.helper.commands.interface import (
-    Ec2InstanceStateManagerHelperCommandABC,
-)
+from app.services.ec2_instance_state_manager.helper.commands.interface import Ec2InstanceStateManagerHelperCommandABC
 from app.utilities.logger import Logger
 
 logger = Logger.get_instance()

@@ -1,8 +1,6 @@
-from app.services.ec2_instance_state_manager.strategies import (
-    StartInstancesByFilters,
-    Ec2InstanceStateActionStrategyABC,
-    StopInstancesByFilters,
-)
+from app.services.ec2_instance_state_manager.strategies.interface import Ec2InstanceStateActionStrategyABC
+from app.services.ec2_instance_state_manager.strategies.start_instances_by_filters import StartInstancesByFilters
+from app.services.ec2_instance_state_manager.strategies.stop_instances_by_filters import StopInstancesByFilters
 
 
 class Ec2InstanceStateManagerStrategyFactory:
