@@ -1,31 +1,21 @@
 # Build stage
-FROM ghcr.io/astral-sh/uv:python3.12-alpine AS builder
+FROM ghcr.io/astral-sh/uv:0.9.21 AS uv
+FROM public.ecr.aws/lambda/python:3.12 AS builder
 
-ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
+ENV UV_COMPILE_BYTECODE=1 UV_NO_INSTALLER_METADATA=1 UV_LINK_MODE=copy
 WORKDIR /app
 
-COPY ./app /app/app
-
-RUN \
-  --mount=type=bind,source=.python-version,target=.python-version \
-  --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-  --mount=type=bind,source=uv.lock,target=uv.lock \
-  --mount=type=cache,target=/root/.cache/uv \
-  uv sync --no-dev
+RUN --mount=from=uv,source=/uv,target=/bin/uv \
+    --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv export --frozen --no-emit-workspace --no-dev --no-editable -o requirements.txt && \
+    uv pip install -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
 
 # Run stage
-FROM python:3.12-alpine AS runner
-WORKDIR /app
+FROM public.ecr.aws/lambda/python:3.12 AS runner
 
-RUN \
-  apk add curl bash && apk cache clean \
-  && addgroup -g 1000 nonroot \
-  && adduser -u 1000 -G nonroot -S nonroot
-
-COPY --from=builder --chown=root:root --chmod=755 /app /app
-
-USER nonroot
-
-ENV PATH="/app/.venv/bin:$PATH"
+COPY --from=builder ${LAMBDA_TASK_ROOT} ${LAMBDA_TASK_ROOT}
+COPY ./app ${LAMBDA_TASK_ROOT}/app
 
 CMD ["app.handler"]
