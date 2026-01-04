@@ -1,4 +1,4 @@
-name: Push Image to AWS ECR
+name: Deploy
 
 on:
   push:
@@ -15,22 +15,38 @@ permissions:
   id-token: write
 
 jobs:
-  deploy:
-    runs-on: ubuntu-22.04
+  lint:
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Checkout code
-        id: checkout-code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
+      - name: Setup python environment
+        uses: actions/setup-python@v6
+
+      - name: Install dependencies
+        run: pip install ruff
+
+      - name: Lint with Ruff
+        run: ruff check .
+
+  deploy:
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
 
       - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
-          role-to-assume: ${{ !env.ACT && format('arn:aws:iam::{0}:role/{1}', secrets.AWS_ACCOUNT_ID, env.AWS_IAM_ROLE) || '' }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ env.AWS_IAM_ROLE }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-          mask-aws-account-id: "no"
+          mask-aws-account-id: true
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -44,6 +60,6 @@ jobs:
         run: |
           docker build -t $REPOSITORY .
           docker tag $REPOSITORY $REGISTRY/$REPOSITORY:$IMAGE_TAG
-          docker tag $REPOSITORY $REGISTRY/$REPOSITORY:LATEST
+          docker tag $REPOSITORY $REGISTRY/$REPOSITORY:latest
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
-          docker push $REGISTRY/$REPOSITORY:LATEST
+          docker push $REGISTRY/$REPOSITORY:latest
