@@ -3,6 +3,7 @@ name: Push Image to AWS ECR
 on:
   push:
     branches: [master]
+  workflow_dispatch:
 
 env:
   AWS_REGION: ap-southeast-1
@@ -10,6 +11,7 @@ env:
   AWS_IAM_ROLE: core-AWSFederatedRoleForGithubActions
 
 permissions:
+  contents: read
   id-token: write
 
 jobs:
