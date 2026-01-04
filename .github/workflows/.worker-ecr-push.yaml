@@ -1,0 +1,60 @@
+name: Build and Push to ECR
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      region:
+        required: true
+        type: string
+      repository:
+        required: true
+        type: string
+      role:
+        required: true
+        type: string
+    outputs:
+      registry:
+        description: "The ECR registry URL used for the build"
+        value: ${{ jobs.build-and-push.outputs.registry }}
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      registry: ${{ steps.login-ecr.outputs.registry }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ inputs.role }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ inputs.region }}
+          mask-aws-account-id: true
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push docker image to Amazon ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ inpits.repository }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $REPOSITORY .
+          docker tag $REPOSITORY $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+          if [ "${{ inputs.environment }}" == "prod" ]; then
+            docker tag $REPOSITORY $REGISTRY/$REPOSITORY:latest
+            docker push $REGISTRY/$REPOSITORY:latest
+          fi

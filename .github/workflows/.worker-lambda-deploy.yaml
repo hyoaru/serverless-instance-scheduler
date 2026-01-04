@@ -1,0 +1,24 @@
+name: Deploy to Lambda
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      registry:
+        required: true
+        type: string
+      repository:
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Lambda
+        uses: aws-actions/aws-lambda-deploy@v1
+        with:
+          function-name: ${{ inputs.environment }}-devops-instance-scheduler
+          image-uri: ${{ inputs.registry }}/${{ inputs.repository }}:${{ github.sha }}

@@ -1,0 +1,54 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Manual Environment Selection"
+        type: choice
+        options: [dev, stage, prod]
+        default: "dev"
+
+env:
+  AWS_REGION: ap-southeast-1
+  AWS_ECR_REPOSITORY: serverless-office-hours-instance-scheduler
+  AWS_IAM_ROLE: core-AWSFederatedRoleForGithubActions
+
+jobs:
+  setup-environment:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-environment.outputs.environment }}
+    steps:
+      - id: set-environment
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+            echo "environment=stage" >> $GITHUB_OUTPUT
+          else
+            echo "environment=dev" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-push:
+    needs: [setup-environment]
+    uses: ./.github/workflows/.worker-ecr-push.yaml
+    with:
+      environment: ${{ needs.setup-environment.outputs.environment }}
+      region: ${{ env.AWS_REGION }}
+      repository: ${{ env.AWS_ECR_REPOSITORY }}
+      role: ${{ env.AWS_IAM_ROLE }}
+    secrets: inherit
+
+  deploy:
+    needs: [setup-environment, build-and-push]
+    uses: ./.github/workflows/.worker-lambda-deploy.yaml
+    with:
+      environment: ${{ needs.setup-environment.outputs.environment }}
+      registry: ${{ needs.build-and-push.outputs.registry }}
+      repository: ${{ env.AWS_ECR_REPOSITORY }}
+    secrets: inherit
