@@ -21,4 +21,5 @@ jobs:
         uses: aws-actions/aws-lambda-deploy@v1
         with:
           function-name: ${{ inputs.environment }}-devops-instance-scheduler
+          package-type: Image
           image-uri: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ inputs.region }}.amazonaws.com/${{ inputs.repository }}:${{ github.sha }}
