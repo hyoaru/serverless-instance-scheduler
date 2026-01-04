@@ -28,4 +28,4 @@ USER nonroot
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-CMD ["lambda"]
+CMD ["app.handler"]
