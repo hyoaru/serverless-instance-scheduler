@@ -13,6 +13,10 @@ on:
         options: [dev, stage, prod]
         default: "dev"
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   setup-environment:
     runs-on: ubuntu-latest
