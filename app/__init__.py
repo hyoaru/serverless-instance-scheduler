@@ -24,8 +24,7 @@ def handler(event, context):
     logger = Logger.get_instance()
 
     logger.info("Initializing parameters")
-    fn = context["function_name"]
-    environment = cast(Literal["dev", "stage", "prod"], fn[0 : fn.find("-")])
+    environment = cast(Literal["dev", "stage", "prod"], os.environ["ENVIRONMENT"])
     action = event["action"]
 
     logger.info(f"Executing {action} for environment: {environment}")
