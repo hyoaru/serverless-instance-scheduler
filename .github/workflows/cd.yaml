@@ -48,6 +48,6 @@ jobs:
     uses: ./.github/workflows/.worker-lambda-deploy.yaml
     with:
       environment: ${{ needs.setup-environment.outputs.environment }}
-      registry: ${{ needs.build-and-push.outputs.registry }}
+      region: ${{ vars.AWS_REGION }}
       repository: ${{ vars.AWS_ECR_REPOSITORY }}
     secrets: inherit

@@ -15,16 +15,10 @@ on:
       role:
         required: true
         type: string
-    outputs:
-      registry:
-        description: "The ECR registry URL used for the build"
-        value: ${{ jobs.build-and-push.outputs.registry }}
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    outputs:
-      registry: ${{ steps.login-ecr.outputs.registry }}
     steps:
       - uses: actions/checkout@v4
       - name: Configure AWS credentials (OIDC)
