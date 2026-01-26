@@ -12,9 +12,6 @@ on:
       repository:
         required: true
         type: string
-      role:
-        required: true
-        type: string
 
 jobs:
   build-and-push:
@@ -24,7 +21,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v5
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ inputs.role }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ inputs.environment }}-InstanceSchedulerGithubActionsFederatedRole
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ inputs.region }}
@@ -37,14 +34,11 @@ jobs:
       - name: Build, tag, and push docker image to Amazon ECR
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REPOSITORY: ${{ inputs.repository }}
+          REPOSITORY: ${{ inputs.environment }}-${{ inputs.repository }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build -t $REPOSITORY .
           docker tag $REPOSITORY $REGISTRY/$REPOSITORY:$IMAGE_TAG
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
-
-          if [ "${{ inputs.environment }}" == "prod" ]; then
-            docker tag $REPOSITORY $REGISTRY/$REPOSITORY:latest
-            docker push $REGISTRY/$REPOSITORY:latest
-          fi
+          docker tag $REPOSITORY $REGISTRY/$REPOSITORY:latest
+          docker push $REGISTRY/$REPOSITORY:latest

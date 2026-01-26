@@ -3,7 +3,6 @@ name: Continuous Deployment
 on:
   push:
     branches:
-      - develop
       - master
   workflow_dispatch:
     inputs:
@@ -28,8 +27,10 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
           elif [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+            echo "environment=prod" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
             echo "environment=stage" >> $GITHUB_OUTPUT
-          else
+          elif [[ "${{ github.ref }}" == "refs/heads/feature/*" ]]; then
             echo "environment=dev" >> $GITHUB_OUTPUT
           fi
 
@@ -40,7 +41,6 @@ jobs:
       environment: ${{ needs.setup-environment.outputs.environment }}
       region: ${{ vars.AWS_REGION }}
       repository: ${{ vars.AWS_ECR_REPOSITORY }}
-      role: ${{ vars.AWS_IAM_ROLE }}
     secrets: inherit
 
   deploy:
@@ -50,5 +50,4 @@ jobs:
       environment: ${{ needs.setup-environment.outputs.environment }}
       region: ${{ vars.AWS_REGION }}
       repository: ${{ vars.AWS_ECR_REPOSITORY }}
-      role: ${{ vars.AWS_IAM_ROLE }}
     secrets: inherit

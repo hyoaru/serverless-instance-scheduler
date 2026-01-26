@@ -1,8 +1,25 @@
 services:
   lambda:
     build: .
-    container_name: serverless-office-hours-instance-scheduler
+    container_name: instance_scheduler_lambda
     ports:
       - "9000:8080"
-    env_file:
-      - .env
+    environment:
+      # Pulled from aws-vault
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
+      # From .env
+      - AWS_REGION=${AWS_REGION}
+      - POWERTOOLS_LOGGER_LOG_EVENT=${POWERTOOLS_LOGGER_LOG_EVENT}
+      - POWERTOOLS_SERVICE_NAME=${POWERTOOLS_SERVICE_NAME}
+      - POWER_TOOLS_LOG_LEVEL=${POWER_TOOLS_LOG_LEVEL}
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./app
+          target: /var/task/app
+        - action: rebuild
+          path: pyproject.toml
+        - action: rebuild
+          path: uv.lock

@@ -12,9 +12,6 @@ on:
       repository:
         required: true
         type: string
-      role:
-        required: true
-        type: string
 
 jobs:
   deploy:
@@ -23,7 +20,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v5
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ inputs.role }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ inputs.environment }}-InstanceSchedulerGithubActionsFederatedRole
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ inputs.region }}
@@ -36,6 +33,6 @@ jobs:
       - name: Deploy to Lambda
         uses: aws-actions/aws-lambda-deploy@v1.1.0
         with:
-          function-name: ${{ inputs.environment }}-devops-instance-scheduler
+          function-name: ${{ inputs.environment }}-devops-office-hours-instance-scheduler
           package-type: Image
           image-uri: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ inputs.region }}.amazonaws.com/${{ inputs.repository }}:${{ github.sha }}
