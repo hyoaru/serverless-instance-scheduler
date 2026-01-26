@@ -1,27 +1,19 @@
-import json
-import os
-from typing import Literal, cast
+import asyncio
 
-import boto3
-from dotenv import load_dotenv
+from aws_lambda_powertools.utilities.typing import LambdaContext
+from aws_lambda_powertools.utilities.parser import event_parser
 
-from app.services.ec2_instance_state_manager import Ec2InstanceStateManager
-from app.utilities.logger import Logger
-
-load_dotenv()
-
-ec2 = boto3.client("ec2")
+from app.models import Event
+from app.services.office_hour_instances_state_manager import OfficeHourInstancesStateManager
+from app.instances import logger
 
 
-def handler(event, context):
-    Logger.setup_logging(is_verbose=True)
-    logger = Logger.get_instance()
+async def main(event: Event, context: LambdaContext):
+    await OfficeHourInstancesStateManager().execute(event.action)
+    return {"status": 200, "message": f"Successfully executed {event.action}"}
 
-    logger.info("Initializing parameters")
-    environment = cast(Literal["dev", "stage", "prod"], os.environ["ENVIRONMENT"])
-    action = event["action"]
 
-    logger.info(f"Executing {action} for environment: {environment}")
-    Ec2InstanceStateManager(ec2, environment).execute(action)
-
-    return json.dumps({"status": 200, "message": f"Successfully executed {action}"})
+@event_parser(model=Event)
+@logger.inject_lambda_context
+def handler(event: Event, context: LambdaContext):
+    asyncio.run(main(event, context))
